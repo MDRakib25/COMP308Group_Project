@@ -16,13 +16,26 @@ variables:
 
 steps:
 
+# Checkout source code
 - task: Checkout@1
-  displayName: 'Checkout Source Code'
+  displayName: 'Checkout Repository'
 
+# Use Node.js (v18)
 - task: UseNode@1
-  displayName: 'Use Node.js'
+  displayName: 'Set Node.js Version'
   inputs:
     version: '18.x'
+
+# Print directories for debugging
+- task: PowerShell@2
+  displayName: 'Debug: Show Folder Structure'
+  inputs:
+    targetType: 'inline'
+    script: |
+      Write-Host "Backend path: $(backendPath)"
+      Write-Host "AI Service path: $(aiServicePath)"
+      Write-Host "Frontend path: $(frontendPath)"
+      Get-ChildItem -Recurse
 
 # Install Backend Dependencies
 - task: Npm@1
@@ -45,30 +58,23 @@ steps:
     workingDir: '$(frontendPath)'
     command: 'install'
 
-# Build Frontend
+# Build Frontend (React/Vite)
 - task: Npm@1
-  displayName: 'Build Frontend App'
+  displayName: 'Build Frontend Application'
   inputs:
     workingDir: '$(frontendPath)'
     command: 'run'
     arguments: 'build'
 
-# Optional: Run Backend Tests (add test script in package.json if needed)
-# - task: Npm@1
-#   displayName: 'Run Backend Tests'
-#   inputs:
-#     workingDir: '$(backendPath)'
-#     command: 'run'
-#     arguments: 'test'
-
-# Publish Frontend Build Artifacts
+# Copy build output for deployment
 - task: CopyFiles@2
-  displayName: 'Copy Frontend Build to Artifact Staging'
+  displayName: 'Copy Frontend Build to Staging Directory'
   inputs:
     SourceFolder: '$(frontendPath)/dist'
     Contents: '**'
     TargetFolder: '$(Build.ArtifactStagingDirectory)/frontend-dist'
 
+# Publish frontend build artifact
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Frontend Artifact'
   inputs:
