@@ -1,0 +1,77 @@
+# ASP.NET Core (.NET Framework)
+# Build and test ASP.NET Core projects targeting the full .NET Framework.
+# Add steps that publish symbols, save build artifacts, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+trigger:
+  - main
+
+pool:
+  name: Default
+
+variables:
+  backendPath: 'Backend'
+  aiServicePath: 'ai-service'
+  frontendPath: 'patient-monitoring-frontend'
+
+steps:
+
+- task: Checkout@1
+  displayName: 'Checkout Source Code'
+
+- task: UseNode@1
+  displayName: 'Use Node.js'
+  inputs:
+    version: '18.x'
+
+# Install Backend Dependencies
+- task: Npm@1
+  displayName: 'Install Backend Dependencies'
+  inputs:
+    workingDir: '$(backendPath)'
+    command: 'install'
+
+# Install AI Service Dependencies
+- task: Npm@1
+  displayName: 'Install AI Service Dependencies'
+  inputs:
+    workingDir: '$(aiServicePath)'
+    command: 'install'
+
+# Install Frontend Dependencies
+- task: Npm@1
+  displayName: 'Install Frontend Dependencies'
+  inputs:
+    workingDir: '$(frontendPath)'
+    command: 'install'
+
+# Build Frontend
+- task: Npm@1
+  displayName: 'Build Frontend App'
+  inputs:
+    workingDir: '$(frontendPath)'
+    command: 'run'
+    arguments: 'build'
+
+# Optional: Run Backend Tests (add test script in package.json if needed)
+# - task: Npm@1
+#   displayName: 'Run Backend Tests'
+#   inputs:
+#     workingDir: '$(backendPath)'
+#     command: 'run'
+#     arguments: 'test'
+
+# Publish Frontend Build Artifacts
+- task: CopyFiles@2
+  displayName: 'Copy Frontend Build to Artifact Staging'
+  inputs:
+    SourceFolder: '$(frontendPath)/dist'
+    Contents: '**'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/frontend-dist'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Frontend Artifact'
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend-dist'
+    ArtifactName: 'frontend'
+    publishLocation: 'Container'
